@@ -9,6 +9,7 @@ import { apiVersion, dataset, projectId } from './sanity/env'
 export default defineConfig({
   name: 'knotswithlove',
   title: 'Knots with Love — Studio',
+  basePath: '/studio',
   projectId,
   dataset,
   plugins: [
