@@ -3,5 +3,6 @@ import inspirationPost from './inspirationPost'
 import about from './about'
 import contact from './contact'
 import siteSettings from './siteSettings'
+import contactSubmission from './contactSubmission'
 
-export const schemaTypes = [product, inspirationPost, about, contact, siteSettings]
+export const schemaTypes = [product, inspirationPost, about, contact, siteSettings, contactSubmission]
