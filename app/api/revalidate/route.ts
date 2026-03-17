@@ -8,6 +8,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Invalid or missing secret' }, { status: 401 })
   }
 
-  revalidatePath('/')
-  return NextResponse.json({ revalidated: true, now: Date.now() })
+  try {
+    revalidatePath('/')
+    return NextResponse.json({ revalidated: true, now: Date.now() })
+  } catch (err) {
+    console.error('revalidate: revalidatePath failed', err)
+    return NextResponse.json({ message: 'Revalidation failed.' }, { status: 500 })
+  }
 }

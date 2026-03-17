@@ -1,38 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
-interface CartItem {
-  name: string
-  price: string
-  qty: number
-}
-
-function parsePrice(s: string) {
-  return parseInt(s.replace(/[^0-9]/g, ''), 10) || 0
-}
+import { type CartItem, CART_EVENT, loadCart, removeFromCart, parsePrice } from '@/lib/cart'
 
 export default function CartSection() {
   const [items, setItems] = useState<CartItem[]>([])
 
-  const load = () => {
-    try {
-      setItems(JSON.parse(localStorage.getItem('kwl_cart') || '[]'))
-    } catch { setItems([]) }
-  }
+  const load = () => setItems(loadCart())
 
   useEffect(() => {
     load()
-    window.addEventListener('kwl_cart_updated', load)
-    return () => window.removeEventListener('kwl_cart_updated', load)
+    window.addEventListener(CART_EVENT, load)
+    return () => window.removeEventListener(CART_EVENT, load)
   }, [])
 
-  const remove = (name: string) => {
-    const next = items.filter((i) => i.name !== name)
-    localStorage.setItem('kwl_cart', JSON.stringify(next))
-    setItems(next)
-    window.dispatchEvent(new Event('kwl_cart_updated'))
-  }
+  const remove = (name: string) => setItems(removeFromCart(name))
 
   const subtotal = items.reduce((s, i) => s + parsePrice(i.price) * i.qty, 0)
 

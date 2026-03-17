@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { urlFor } from '@/lib/imageUrl'
+import { addToCart } from '@/lib/cart'
 
 interface Product {
   _id: string
@@ -23,17 +24,10 @@ const FALLBACK_PRODUCTS: Product[] = [
   { _id: '6', name: 'Market Tote Bag',    price: '$10', badge: 'New',        color: 'plh-peach',   description: 'an open-weave crochet tote in natural cotton — goes with everything and holds more than it looks like it should.' },
 ]
 
-function addToCart(name: string, price: string) {
-  try {
-    const items: { name: string; price: string; qty: number }[] =
-      JSON.parse(localStorage.getItem('kwl_cart') || '[]')
-    const existing = items.find((i) => i.name === name)
-    if (existing) { existing.qty += 1 } else { items.push({ name, price, qty: 1 }) }
-    localStorage.setItem('kwl_cart', JSON.stringify(items))
-    window.dispatchEvent(new Event('kwl_cart_updated'))
-    const cartEl = document.getElementById('cart')
-    if (cartEl) cartEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  } catch { /* noop */ }
+function addToCartAndScroll(name: string, price: string) {
+  addToCart(name, price)
+  const cartEl = document.getElementById('cart')
+  if (cartEl) cartEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 export default function ShopSection({ products }: { products: Product[] | null }) {
@@ -79,7 +73,7 @@ export default function ShopSection({ products }: { products: Product[] | null }
                     <span className="shop-price">{product.price}</span>
                     <button
                       className="btn-shop-add"
-                      onClick={() => addToCart(product.name, product.price)}
+                      onClick={() => addToCartAndScroll(product.name, product.price)}
                       disabled={product.inStock === false}
                     >
                       <i className="fas fa-shopping-bag" />
