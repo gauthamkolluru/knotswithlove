@@ -234,8 +234,15 @@ a { color: inherit; }
   padding: 4rem 0 5rem;
 }
 
-.home-left { order: 1; }
-.home-right { order: 2; display: flex; justify-content: center; align-items: center; }
+.home-left { order: 1; min-width: 0; }
+.home-right {
+  order: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+}
 
 .home-greeting {
   font-size: 2.4rem;
@@ -266,11 +273,13 @@ a { color: inherit; }
 }
 
 .home-author-image {
-  width: 340px;
+  width: 100%;
   max-width: 100%;
+  height: auto;
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 50%;
+  display: block;
 }
 
 .home-hero-illustration {

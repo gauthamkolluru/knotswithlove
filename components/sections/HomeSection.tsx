@@ -3,6 +3,9 @@ import { urlFor } from '@/lib/imageUrl'
 import { DEFAULT_BRAND_NAME } from '@/lib/constants'
 import type { SiteSettings } from '@/sanity/lib/types'
 
+/** Largest square edge in the home grid (~½ of 1200px container minus gap). */
+const HERO_AUTHOR_IMAGE_PX = 552
+
 export default function HomeSection({ settings }: { settings: SiteSettings | null }) {
   const greeting    = settings?.greeting    || "hey, it's"
   const authorName  = settings?.authorName  || 'Harshita'
@@ -11,7 +14,11 @@ export default function HomeSection({ settings }: { settings: SiteSettings | nul
   const brandName   = settings?.title       || DEFAULT_BRAND_NAME
 
   const heroImageUrl = settings?.heroImage
-    ? urlFor(settings.heroImage).width(680).height(680).fit('crop').url()
+    ? urlFor(settings.heroImage)
+        .width(HERO_AUTHOR_IMAGE_PX * 2)
+        .height(HERO_AUTHOR_IMAGE_PX * 2)
+        .fit('crop')
+        .url()
     : null
 
   return (
@@ -31,8 +38,9 @@ export default function HomeSection({ settings }: { settings: SiteSettings | nul
               <Image
                 src={heroImageUrl}
                 alt={authorName}
-                width={340}
-                height={340}
+                width={HERO_AUTHOR_IMAGE_PX}
+                height={HERO_AUTHOR_IMAGE_PX}
+                sizes="(max-width: 768px) 100vw, 50vw"
                 className="home-author-image"
                 priority
               />
