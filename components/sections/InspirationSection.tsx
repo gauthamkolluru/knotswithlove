@@ -1,17 +1,6 @@
 import Image from 'next/image'
 import { urlFor } from '@/lib/imageUrl'
-
-interface InspirationPost {
-  _id: string
-  caption: string
-  image?: { asset: { _ref: string } }
-  color?: string
-}
-
-interface SiteSettings {
-  instagramHandle?: string
-  instagramUrl?: string
-}
+import type { InspirationPost, SiteSettings } from '@/sanity/lib/types'
 
 const FALLBACK_POSTS: InspirationPost[] = [
   { _id: '1', caption: 'spring pastels collection just dropped ✨ lilac, mint & the softest cream you\'ve ever seen', color: 'ig-rose' },

@@ -1,15 +1,41 @@
+import { type Currency, isCurrency, parseLegacyPriceString, type Money } from '@/lib/money'
+
 export interface CartItem {
   name: string
-  price: string
+  amount: number
+  currency: Currency
   qty: number
 }
 
 const CART_KEY = 'kwl_cart'
 export const CART_EVENT = 'kwl_cart_updated'
 
+function normalizeCartItem(raw: unknown): CartItem | null {
+  if (!raw || typeof raw !== 'object') return null
+  const item = raw as Record<string, unknown>
+  if (typeof item.name !== 'string') return null
+
+  const qty = typeof item.qty === 'number' && item.qty > 0 ? Math.floor(item.qty) : 1
+
+  if (typeof item.amount === 'number' && Number.isFinite(item.amount) && isCurrency(item.currency)) {
+    return { name: item.name, amount: item.amount, currency: item.currency, qty }
+  }
+
+  if (typeof item.price === 'string') {
+    const legacy = parseLegacyPriceString(item.price)
+    if (legacy) {
+      return { name: item.name, amount: legacy.amount, currency: legacy.currency, qty }
+    }
+  }
+
+  return null
+}
+
 export function loadCart(): CartItem[] {
   try {
-    return JSON.parse(localStorage.getItem(CART_KEY) || '[]')
+    const parsed = JSON.parse(localStorage.getItem(CART_KEY) || '[]')
+    if (!Array.isArray(parsed)) return []
+    return parsed.map(normalizeCartItem).filter((item): item is CartItem => item !== null)
   } catch {
     return []
   }
@@ -20,23 +46,27 @@ export function saveCart(items: CartItem[]): void {
   window.dispatchEvent(new Event(CART_EVENT))
 }
 
-export function addToCart(name: string, price: string): void {
+export function addToCart(name: string, money: Money): void {
   const items = loadCart()
-  const existing = items.find((i) => i.name === name)
+  const existing = items.find((item) => item.name === name)
   if (existing) {
     existing.qty += 1
   } else {
-    items.push({ name, price, qty: 1 })
+    items.push({ name, amount: money.amount, currency: money.currency, qty: 1 })
   }
   saveCart(items)
 }
 
 export function removeFromCart(name: string): CartItem[] {
-  const next = loadCart().filter((i) => i.name !== name)
+  const next = loadCart().filter((item) => item.name !== name)
   saveCart(next)
   return next
 }
 
-export function parsePrice(s: string): number {
-  return parseInt(s.replace(/[^0-9]/g, ''), 10) || 0
+export function cartItemCount(items: CartItem[]): number {
+  return items.reduce((total, item) => total + item.qty, 0)
+}
+
+export function cartItemMoney(item: CartItem): Money {
+  return { amount: item.amount, currency: item.currency }
 }

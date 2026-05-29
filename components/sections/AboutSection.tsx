@@ -1,22 +1,9 @@
 import Image from 'next/image'
 import { PortableText } from '@portabletext/react'
 import { urlFor } from '@/lib/imageUrl'
+import type { About, AboutValue } from '@/sanity/lib/types'
 
-interface Value {
-  _key?: string
-  icon?: string
-  title?: string
-  description?: string
-}
-
-interface About {
-  heading?: string
-  photo?: { asset: { _ref: string } }
-  story?: unknown[]
-  values?: Value[]
-}
-
-const FALLBACK_VALUES: Value[] = [
+const FALLBACK_VALUES: AboutValue[] = [
   { _key: '1', icon: 'fas fa-heart',  title: 'made with love',       description: 'every piece is handcrafted by me — no machines, no shortcuts. just hands, a hook, and a lot of heart.' },
   { _key: '2', icon: 'fas fa-leaf',   title: 'quality yarn only',    description: 'soft, quality materials that feel as good as they look. life\'s too short for scratchy yarn.' },
   { _key: '3', icon: 'fas fa-gift',   title: 'custom orders welcome', description: 'have a specific colour, size or idea in mind? i take custom orders and love a good creative challenge.' },

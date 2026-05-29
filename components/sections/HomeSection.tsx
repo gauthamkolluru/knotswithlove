@@ -1,21 +1,14 @@
 import Image from 'next/image'
 import { urlFor } from '@/lib/imageUrl'
-
-interface SiteSettings {
-  title?: string
-  greeting?: string
-  authorName?: string
-  subtitle?: string
-  description?: string
-  heroImage?: { asset: { _ref: string } }
-}
+import { DEFAULT_BRAND_NAME } from '@/lib/constants'
+import type { SiteSettings } from '@/sanity/lib/types'
 
 export default function HomeSection({ settings }: { settings: SiteSettings | null }) {
   const greeting    = settings?.greeting    || "hey, it's"
   const authorName  = settings?.authorName  || 'Harshita'
   const subtitle    = settings?.subtitle    || 'maker, crocheter & the one tying all these knots'
   const description = settings?.description || 'welcome to my cosy corner of handmade things — slow crafts, pretty yarn, and pieces made with way too much love. if something\'s been stitched by hand and wrapped with care, it probably came from here ✨'
-  const brandName   = settings?.title       || 'Knots with Love'
+  const brandName   = settings?.title       || DEFAULT_BRAND_NAME
 
   const heroImageUrl = settings?.heroImage
     ? urlFor(settings.heroImage).width(680).height(680).fit('crop').url()

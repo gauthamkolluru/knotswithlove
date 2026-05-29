@@ -1,11 +1,25 @@
 # Knots With Love — Claude Code Instructions
 
+## Monorepo engineering standards (`11-projects`)
+
+This project lives under the **`11-projects`** monorepo. Before substantive code or documentation changes, **locate the monorepo root** by walking up parent directories until you find **`ENGINEERING_GUIDELINES_VERBATIM.md`**, then:
+
+1. Read and follow **`ENGINEERING_GUIDELINES_VERBATIM.md`** (canonical standards for humans and all agents).
+2. Apply **`.cursor/rules/*.mdc`** from that root (treat as binding project standards; YAML frontmatter may be skipped outside Cursor).
+3. Optional review workflow: **`.cursor/skills/grill-me/SKILL.md`** at that root.
+
+If `ENGINEERING_GUIDELINES_VERBATIM.md` cannot be found (standalone checkout), ignore this section.
+
+When adding **another** new project under `11-projects`, add **`CLAUDE.md`** and **`AGENTS.md`** at its root and include this same section.
+
+---
+
 This is a Next.js 15 + Sanity v3 e-commerce website for selling crochet patterns and products (knotswithlove.org). Content is managed by a non-technical user (Harshita) via Sanity Studio at `/studio`.
 
 ## Stack
 - **Framework:** Next.js 15 (App Router)
 - **CMS:** Sanity v3 (embedded studio at `/studio`, on-demand ISR revalidation)
-- **Styling:** Tailwind CSS, brand fonts: Dancing Script + Mulish
+- **Styling:** Plain CSS (`app/globals.css`), brand fonts: Dancing Script + Mulish
 - **Cart:** localStorage + custom `kwl_cart_updated` events
 
 ## Core Principles (NON-NEGOTIABLE)

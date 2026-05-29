@@ -3,29 +3,20 @@
 import Image from 'next/image'
 import { urlFor } from '@/lib/imageUrl'
 import { addToCart } from '@/lib/cart'
-
-interface Product {
-  _id: string
-  name: string
-  description?: string
-  price: string
-  badge?: string
-  image?: { asset: { _ref: string } }
-  color?: string
-  inStock?: boolean
-}
+import { formatMoney, resolveProductPrice } from '@/lib/money'
+import type { Product } from '@/sanity/lib/types'
 
 const FALLBACK_PRODUCTS: Product[] = [
-  { _id: '1', name: 'Boho Basket',        price: '$12', badge: 'Bestseller', color: 'plh-rose',     description: 'a handcrafted boho storage basket — sturdy, cosy, and somehow makes every room look like it has its life together.' },
-  { _id: '2', name: 'Sunflower Coaster Set', price: '$5',  color: 'plh-yellow',  description: 'set of 4 little sunflower coasters. honestly, too pretty to put a mug on — but please do anyway.' },
-  { _id: '3', name: 'Sage Plant Hanger',  price: '$8',  badge: 'New',        color: 'plh-sage',    description: 'a macramé-inspired plant hanger in sage green cotton. your plants deserve nice things too.' },
-  { _id: '4', name: 'Chunky Throw Blanket', price: '$28', color: 'plh-blue',    description: 'the kind of blanket you pick up, wrap yourself in, and refuse to put down. made for slow mornings.' },
-  { _id: '5', name: 'Pastel Trinket Pouch', price: '$6',  color: 'plh-lavender', description: 'a tiny drawstring pouch in the softest pastels — for jewellery, earbuds, or whatever you can\'t find at 8am.' },
-  { _id: '6', name: 'Market Tote Bag',    price: '$10', badge: 'New',        color: 'plh-peach',   description: 'an open-weave crochet tote in natural cotton — goes with everything and holds more than it looks like it should.' },
+  { _id: '1', name: 'Boho Basket', priceAmount: 12, priceCurrency: 'USD', badge: 'Bestseller', color: 'plh-rose', description: 'a handcrafted boho storage basket — sturdy, cosy, and somehow makes every room look like it has its life together.' },
+  { _id: '2', name: 'Sunflower Coaster Set', priceAmount: 5, priceCurrency: 'USD', color: 'plh-yellow', description: 'set of 4 little sunflower coasters. honestly, too pretty to put a mug on — but please do anyway.' },
+  { _id: '3', name: 'Sage Plant Hanger', priceAmount: 8, priceCurrency: 'USD', badge: 'New', color: 'plh-sage', description: 'a macramé-inspired plant hanger in sage green cotton. your plants deserve nice things too.' },
+  { _id: '4', name: 'Chunky Throw Blanket', priceAmount: 28, priceCurrency: 'USD', color: 'plh-blue', description: 'the kind of blanket you pick up, wrap yourself in, and refuse to put down. made for slow mornings.' },
+  { _id: '5', name: 'Pastel Trinket Pouch', priceAmount: 6, priceCurrency: 'USD', color: 'plh-lavender', description: 'a tiny drawstring pouch in the softest pastels — for jewellery, earbuds, or whatever you can\'t find at 8am.' },
+  { _id: '6', name: 'Market Tote Bag', priceAmount: 10, priceCurrency: 'USD', badge: 'New', color: 'plh-peach', description: 'an open-weave crochet tote in natural cotton — goes with everything and holds more than it looks like it should.' },
 ]
 
-function addToCartAndScroll(name: string, price: string) {
-  addToCart(name, price)
+function addToCartAndScroll(name: string, money: ReturnType<typeof resolveProductPrice>) {
+  addToCart(name, money)
   const cartEl = document.getElementById('cart')
   if (cartEl) cartEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
@@ -47,6 +38,7 @@ export default function ShopSection({ products }: { products: Product[] | null }
             const imgUrl = product.image
               ? urlFor(product.image).width(420).height(420).fit('crop').url()
               : null
+            const unitPrice = resolveProductPrice(product)
 
             return (
               <div key={product._id} className="shop-card">
@@ -70,10 +62,10 @@ export default function ShopSection({ products }: { products: Product[] | null }
                   </div>
                   <p className="shop-card-desc">{product.description}</p>
                   <div className="shop-card-footer">
-                    <span className="shop-price">{product.price}</span>
+                    <span className="shop-price">{formatMoney(unitPrice)}</span>
                     <button
                       className="btn-shop-add"
-                      onClick={() => addToCartAndScroll(product.name, product.price)}
+                      onClick={() => addToCartAndScroll(product.name, unitPrice)}
                       disabled={product.inStock === false}
                     >
                       <i className="fas fa-shopping-bag" />

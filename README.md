@@ -39,10 +39,14 @@ cp .env.local.example .env.local
 Open `.env.local` and fill in:
 
 ```env
-NEXT_PUBLIC_SANITY_PROJECT_ID=abc123xy        # from step 1
+NEXT_PUBLIC_SANITY_PROJECT_ID=abc123xy
 NEXT_PUBLIC_SANITY_DATASET=production
 NEXT_PUBLIC_SANITY_API_VERSION=2024-01-01
 SANITY_REVALIDATE_SECRET=choose-any-random-string
+SANITY_WRITE_TOKEN=your_write_token
+RESEND_API_KEY=your_resend_key
+CONTACT_FROM_EMAIL=onboarding@resend.dev
+CONTACT_TO_EMAIL=hello@example.com
 ```
 
 ---
@@ -67,97 +71,63 @@ npm run dev
 | `http://localhost:3000/studio` | Sanity Studio (content management portal) |
 
 Open the Studio, click **Site Settings**, and fill in your name, description, and hero image.
-Then add products under **Products**, and posts under **Inspiration Feed**.
-The website fetches from Sanity and shows content immediately on each page refresh during development.
+Then add products under **Products** (use **Price amount** + **Currency**), and posts under **Inspiration Feed**.
 
 ---
 
-## 5. Seed initial content (optional)
+## 5. Tests
 
-You can enter content directly in the Studio. Start with:
-
-1. **Site Settings** — brand name, greeting, hero image
-2. **Products** — add each product with photo, price, badge
-3. **Inspiration Feed** — add posts with photos and captions
-4. **About Me** — your story and values
-5. **Contact** — your email, Instagram, WhatsApp
+```bash
+npm test          # Vitest unit tests (money, contact validation)
+npm run test:e2e  # Playwright smoke tests (starts dev server)
+```
 
 ---
 
 ## 6. Deploy to Vercel
 
 ```bash
-# Install Vercel CLI (once)
 npm install -g vercel
-
-# Deploy
 vercel
 ```
 
-During setup, add the same environment variables from `.env.local` to your Vercel project
-(Settings → Environment Variables).
+Add the same environment variables from `.env.local` to your Vercel project.
 
 ---
 
-## 7. Set up instant revalidation webhook (makes updates go live in ~5 seconds)
+## 7. Set up instant revalidation webhook
 
-After deploying to Vercel:
+After deploying:
 
 1. Go to [sanity.io/manage](https://sanity.io/manage) → your project → **API** → **Webhooks**
-2. Click **Add webhook** and fill in:
-   - **Name**: `Revalidate Next.js`
-   - **URL**: `https://your-site.vercel.app/api/revalidate?secret=your-secret`
-     (use the same secret you put in `SANITY_REVALIDATE_SECRET`)
-   - **Dataset**: `production`
-   - **Trigger on**: `Create`, `Update`, `Delete`
-   - **HTTP method**: `POST`
-3. Save.
-
-Now every time Harshita publishes in the Studio, the site updates within seconds.
+2. Add webhook URL: `https://your-site.vercel.app/api/revalidate?secret=your-secret`
+3. Trigger on Create / Update / Delete, method POST
 
 ---
 
 ## Project structure
 
+See **`CODEBASE_INDEX.md`** for symbol lookup.
+
 ```
-app/
-  layout.tsx                    Root layout (fonts, metadata)
-  page.tsx                      Main SPA page — fetches all data from Sanity
-  globals.css                   All brand styles (colours, fonts, components)
-  api/revalidate/route.ts       Webhook endpoint — triggers instant cache bust
-  studio/[[...tool]]/page.tsx   Embedded Sanity Studio
-
-components/
-  Navbar.tsx                    Fixed navbar with scroll transparency & cart badge
-  Footer.tsx                    Footer
-  sections/
-    HomeSection.tsx             Hero with name, description, image
-    ShopSection.tsx             Product grid with add-to-cart
-    InspirationSection.tsx      Instagram-style photo grid
-    AboutSection.tsx            Story + values cards
-    ContactSection.tsx          Contact channels + message form
-    CartSection.tsx             localStorage cart with table & summary
-
-sanity/
-  schemas/                      Content schemas (product, post, about, contact, settings)
-  lib/client.ts                 Sanity client + fetch helper
-  lib/queries.ts                GROQ queries for each section
-  env.ts                        Env variable validation
-
-lib/
-  imageUrl.ts                   Sanity image URL builder helper
+app/                 Pages, API routes, globals.css
+components/          Navbar, Footer, section components
+lib/                 cart, money, logger, contact validation
+sanity/              Schemas, queries, types, client
+docs/FUTURE_WORK.md  Rate limiting & checkout (deferred)
 ```
 
 ---
 
-## Content management quick reference (for Harshita)
+## Content management (for Harshita)
 
 | I want to… | Go to… |
 |---|---|
-| Add / edit a product | Studio → Products → + Create |
-| Add a new inspiration photo | Studio → Inspiration Feed → + Create |
-| Update my story or photo | Studio → About Me |
-| Change contact details | Studio → Contact |
-| Update site name or hero | Studio → Site Settings |
+| Add / edit a product | Studio → Products → set Price amount + Currency |
+| View contact form submissions | Studio → Contact Submissions |
+| Add inspiration photo | Studio → Inspiration Feed |
+| Update story / contact / settings | Studio → About Me / Contact / Site Settings |
 
-After clicking **Publish** in the Studio, the website updates automatically within a few seconds.
+Prices display consistently site-wide via `formatMoney` (USD and INR, with decimals).
+
+Deferred work (rate limiting, checkout): **`docs/FUTURE_WORK.md`**.

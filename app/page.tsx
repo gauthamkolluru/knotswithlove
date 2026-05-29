@@ -6,6 +6,7 @@ import {
   contactQuery,
   siteSettingsQuery,
 } from '@/sanity/lib/queries'
+import { logger } from '@/lib/logger'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import HomeSection from '@/components/sections/HomeSection'
@@ -14,31 +15,43 @@ import InspirationSection from '@/components/sections/InspirationSection'
 import AboutSection from '@/components/sections/AboutSection'
 import ContactSection from '@/components/sections/ContactSection'
 import CartSection from '@/components/sections/CartSection'
+import type { About, Contact, InspirationPost, Product, SiteSettings } from '@/sanity/lib/types'
 
-// Fallback revalidation every 60s. Sanity webhooks trigger instant on-demand revalidation.
 export const revalidate = 60
+
+async function fetchSection<T>(label: string, query: string): Promise<T | null> {
+  try {
+    return await sanityFetch<T>({ query })
+  } catch (err) {
+    logger.error('sanity fetch failed', {
+      section: label,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return null
+  }
+}
 
 export default async function Home() {
   const [products, inspirationPosts, about, contact, settings] = await Promise.all([
-    sanityFetch({ query: productsQuery }).catch(() => null),
-    sanityFetch({ query: inspirationPostsQuery }).catch(() => null),
-    sanityFetch({ query: aboutQuery }).catch(() => null),
-    sanityFetch({ query: contactQuery }).catch(() => null),
-    sanityFetch({ query: siteSettingsQuery }).catch(() => null),
+    fetchSection<Product[]>('products', productsQuery),
+    fetchSection<InspirationPost[]>('inspiration', inspirationPostsQuery),
+    fetchSection<About>('about', aboutQuery),
+    fetchSection<Contact>('contact', contactQuery),
+    fetchSection<SiteSettings>('siteSettings', siteSettingsQuery),
   ])
 
   return (
     <>
-      <Navbar brandName={(settings as { title?: string } | null)?.title} />
+      <Navbar brandName={settings?.title} />
       <main>
-        <HomeSection        settings={settings as Parameters<typeof HomeSection>[0]['settings']} />
-        <ShopSection        products={products as Parameters<typeof ShopSection>[0]['products']} />
-        <InspirationSection posts={inspirationPosts as Parameters<typeof InspirationSection>[0]['posts']} settings={settings as Parameters<typeof InspirationSection>[0]['settings']} />
-        <AboutSection       about={about as Parameters<typeof AboutSection>[0]['about']} />
-        <ContactSection     contact={contact as Parameters<typeof ContactSection>[0]['contact']} />
+        <HomeSection settings={settings} />
+        <ShopSection products={products} />
+        <InspirationSection posts={inspirationPosts} settings={settings} />
+        <AboutSection about={about} />
+        <ContactSection contact={contact} />
         <CartSection />
       </main>
-      <Footer brandName={(settings as { title?: string } | null)?.title} />
+      <Footer brandName={settings?.title} />
     </>
   )
 }
