@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { CART_EVENT, cartItemCount, loadCart } from '@/lib/cart'
+import { DEFAULT_BRAND_NAME } from '@/lib/constants'
 
 const NAV_LINKS = [
   { label: 'Home',        href: '#home' },
@@ -50,22 +52,17 @@ export default function Navbar({ brandName }: { brandName?: string }) {
 
   // Cart count from localStorage
   useEffect(() => {
-    const update = () => {
-      try {
-        const items: { qty: number }[] = JSON.parse(localStorage.getItem('kwl_cart') || '[]')
-        setCartCount(items.reduce((s, i) => s + i.qty, 0))
-      } catch { setCartCount(0) }
-    }
+    const update = () => setCartCount(cartItemCount(loadCart()))
     update()
-    window.addEventListener('kwl_cart_updated', update)
-    return () => window.removeEventListener('kwl_cart_updated', update)
+    window.addEventListener(CART_EVENT, update)
+    return () => window.removeEventListener(CART_EVENT, update)
   }, [])
 
   return (
     <nav className={`navbar${transparent && !menuOpen ? ' transparent' : ''}`}>
       <div className="navbar-inner">
         <a href="#home" className="navbar-brand brand-name">
-          {brandName || 'Knots with Love'}
+          {brandName || DEFAULT_BRAND_NAME}
         </a>
 
         <button
