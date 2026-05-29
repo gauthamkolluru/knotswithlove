@@ -2,6 +2,8 @@ export const productsQuery = `*[_type == "product"] | order(order asc) {
   _id,
   name,
   description,
+  priceAmount,
+  priceCurrency,
   price,
   badge,
   image,

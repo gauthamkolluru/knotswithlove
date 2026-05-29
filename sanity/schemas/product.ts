@@ -18,10 +18,37 @@ export default defineType({
       rows: 3,
     }),
     defineField({
-      name: 'price',
-      title: 'Price (e.g. $12)',
+      name: 'priceAmount',
+      title: 'Price amount',
+      type: 'number',
+      description: 'Use decimals for cents/paise (e.g. 12.50). Required for new products.',
+      validation: (Rule) =>
+        Rule.custom((amount, context) => {
+          const parent = context.parent as { price?: string }
+          if (typeof amount === 'number' && amount >= 0) return true
+          if (parent?.price) return true
+          return 'Enter a price amount'
+        }),
+    }),
+    defineField({
+      name: 'priceCurrency',
+      title: 'Currency',
       type: 'string',
-      validation: (Rule) => Rule.required(),
+      options: {
+        list: [
+          { title: 'US Dollar (USD)', value: 'USD' },
+          { title: 'Indian Rupee (INR)', value: 'INR' },
+        ],
+        layout: 'radio',
+      },
+      initialValue: 'USD',
+    }),
+    defineField({
+      name: 'price',
+      title: 'Legacy price (deprecated)',
+      type: 'string',
+      description: 'Old text price field. Use Price amount + Currency instead.',
+      hidden: true,
     }),
     defineField({
       name: 'badge',
@@ -73,6 +100,16 @@ export default defineType({
     },
   ],
   preview: {
-    select: { title: 'name', subtitle: 'price', media: 'image' },
+    select: {
+      title: 'name',
+      priceAmount: 'priceAmount',
+      priceCurrency: 'priceCurrency',
+      media: 'image',
+    },
+    prepare({ title, priceAmount, priceCurrency, media }) {
+      const amount = typeof priceAmount === 'number' ? priceAmount.toFixed(2) : '—'
+      const currency = priceCurrency || 'USD'
+      return { title, subtitle: `${currency} ${amount}`, media }
+    },
   },
 })

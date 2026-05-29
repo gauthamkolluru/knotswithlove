@@ -1,7 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { type CartItem, CART_EVENT, loadCart, removeFromCart, parsePrice } from '@/lib/cart'
+import {
+  type CartItem,
+  CART_EVENT,
+  cartItemMoney,
+  loadCart,
+  removeFromCart,
+} from '@/lib/cart'
+import { formatMoney, lineTotal, sumMoney } from '@/lib/money'
 
 export default function CartSection() {
   const [items, setItems] = useState<CartItem[]>([])
@@ -16,7 +23,9 @@ export default function CartSection() {
 
   const remove = (name: string) => setItems(removeFromCart(name))
 
-  const subtotal = items.reduce((s, i) => s + parsePrice(i.price) * i.qty, 0)
+  const lineTotals = items.map((item) => lineTotal(cartItemMoney(item), item.qty))
+  const subtotal = sumMoney(lineTotals)
+  const mixedCurrency = items.length > 0 && subtotal === null
 
   return (
     <section id="cart" className="section">
@@ -49,37 +58,49 @@ export default function CartSection() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item) => (
-                    <tr key={item.name}>
-                      <td>{item.name}</td>
-                      <td>{item.qty}</td>
-                      <td>{item.price}</td>
-                      <td>${(parsePrice(item.price) * item.qty).toLocaleString('en-US')}</td>
-                      <td>
-                        <button className="btn-remove" onClick={() => remove(item.name)} aria-label={`Remove ${item.name}`}>
-                          <i className="fas fa-times" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {items.map((item) => {
+                    const unit = cartItemMoney(item)
+                    const total = lineTotal(unit, item.qty)
+                    return (
+                      <tr key={item.name}>
+                        <td>{item.name}</td>
+                        <td>{item.qty}</td>
+                        <td>{formatMoney(unit)}</td>
+                        <td>{formatMoney(total)}</td>
+                        <td>
+                          <button className="btn-remove" onClick={() => remove(item.name)} aria-label={`Remove ${item.name}`}>
+                            <i className="fas fa-times" />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
 
             <div className="cart-summary-wrap">
               <div className="cart-summary">
-                <div className="cart-summary-row">
-                  <span>Subtotal</span>
-                  <span>${subtotal.toLocaleString('en-US')}</span>
-                </div>
-                <div className="cart-summary-row text-muted text-sm">
-                  <span>Shipping</span>
-                  <span>Calculated at checkout</span>
-                </div>
-                <div className="cart-summary-total">
-                  <span>Total</span>
-                  <span>${subtotal.toLocaleString('en-US')}</span>
-                </div>
+                {mixedCurrency ? (
+                  <p className="form-note text-muted text-sm">
+                    Items use different currencies. Line totals are shown above; checkout will support one currency at a time.
+                  </p>
+                ) : (
+                  <>
+                    <div className="cart-summary-row">
+                      <span>Subtotal</span>
+                      <span>{subtotal ? formatMoney(subtotal) : '—'}</span>
+                    </div>
+                    <div className="cart-summary-row text-muted text-sm">
+                      <span>Shipping</span>
+                      <span>Calculated at checkout</span>
+                    </div>
+                    <div className="cart-summary-total">
+                      <span>Total</span>
+                      <span>{subtotal ? formatMoney(subtotal) : '—'}</span>
+                    </div>
+                  </>
+                )}
                 <button className="btn-checkout" onClick={() => alert('Checkout coming soon!')}>
                   <i className="fas fa-lock" />
                   Proceed to Checkout
