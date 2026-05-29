@@ -1,16 +1,20 @@
 // Vulnerability documentation
 // ─────────────────────────────────────────────────────────────────────────────
 // [UNFIXABLE — infrastructure] Rate limiting: This endpoint has no distributed
-// rate limiting. In a serverless/edge environment, in-memory counters do not
-// persist across instances, so per-IP throttling requires an external store.
-// Mitigation: add Upstash Redis + @upstash/ratelimit (recommended for Vercel),
-// or enforce rate limits at the CDN/WAF layer (e.g. Cloudflare Rate Limiting).
-// A client-side honeypot field can additionally deter automated bots.
+// rate limiting. See docs/FUTURE_WORK.md for planned mitigation options.
+// A honeypot field is implemented to deter basic bots.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@sanity/client'
 import { Resend } from 'resend'
+import {
+  buildEmailSubject,
+  contactDeliveryMessage,
+  resolveContactDeliveryStatus,
+  validateContactBody,
+} from '@/lib/contact/validate'
+import { logger } from '@/lib/logger'
 
 const writeClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -22,11 +26,6 @@ const writeClient = createClient({
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const MAX_NAME = 100
-const MAX_SUBJECT = 200
-const MAX_MESSAGE = 5000
-
 export async function POST(req: NextRequest) {
   let body: unknown
   try {
@@ -35,63 +34,56 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
-  const { name, email, subject, message } = body as Record<string, unknown>
-
-  if (typeof name !== 'string' || typeof email !== 'string' || typeof message !== 'string') {
-    return NextResponse.json({ error: 'Name, email, and message are required.' }, { status: 400 })
+  const validation = validateContactBody(body)
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: validation.status })
   }
 
-  const trimName    = name.trim()
-  const trimEmail   = email.trim()
-  const trimSubject = typeof subject === 'string' ? subject.trim() : ''
-  const trimMessage = message.trim()
-
-  if (!trimName || !trimEmail || !trimMessage) {
-    return NextResponse.json({ error: 'Name, email, and message are required.' }, { status: 400 })
-  }
-  if (!EMAIL_RE.test(trimEmail)) {
-    return NextResponse.json({ error: 'Invalid email address.' }, { status: 400 })
-  }
-  if (trimName.length > MAX_NAME) {
-    return NextResponse.json({ error: `Name must be under ${MAX_NAME} characters.` }, { status: 400 })
-  }
-  if (trimSubject.length > MAX_SUBJECT) {
-    return NextResponse.json({ error: `Subject must be under ${MAX_SUBJECT} characters.` }, { status: 400 })
-  }
-  if (trimMessage.length > MAX_MESSAGE) {
-    return NextResponse.json({ error: `Message must be under ${MAX_MESSAGE} characters.` }, { status: 400 })
-  }
+  const { name, email, subject, message } = validation.data
+  const fromEmail = process.env.CONTACT_FROM_EMAIL || 'onboarding@resend.dev'
+  const toEmail = process.env.CONTACT_TO_EMAIL || 'harshita.sripada@gmail.com'
 
   const doc = {
     _type: 'contactSubmission',
-    name:        trimName,
-    email:       trimEmail,
-    subject:     trimSubject,
-    message:     trimMessage,
+    name,
+    email,
+    subject,
+    message,
     submittedAt: new Date().toISOString(),
   }
 
   const [sanityResult, emailResult] = await Promise.allSettled([
     writeClient.create(doc),
     resend.emails.send({
-      from:    'onboarding@resend.dev',
-      to:      'harshita.sripada@gmail.com',
-      subject: `New message from ${trimName}: ${trimSubject || '(no subject)'}`,
-      text:    `Name: ${trimName}\nEmail: ${trimEmail}\nSubject: ${trimSubject || '—'}\n\n${trimMessage}`,
+      from: fromEmail,
+      to: toEmail,
+      subject: buildEmailSubject(name, subject),
+      text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject || '—'}\n\n${message}`,
     }),
   ])
 
   const savedToSanity = sanityResult.status === 'fulfilled'
-  const emailSent     = emailResult.status === 'fulfilled'
+  const emailSent = emailResult.status === 'fulfilled'
+  const status = resolveContactDeliveryStatus(savedToSanity, emailSent)
 
-  if (!savedToSanity) console.error('contact: Sanity write failed', sanityResult.reason)
-  if (!emailSent)     console.error('contact: Resend failed', emailResult.reason)
-
-  if (!savedToSanity && !emailSent) {
-    return NextResponse.json({ error: 'Failed to send your message. Please try again.' }, { status: 500 })
+  if (!savedToSanity) {
+    logger.error('contact: Sanity write failed', {
+      error: sanityResult.status === 'rejected' ? String(sanityResult.reason) : 'unknown',
+    })
+  }
+  if (!emailSent) {
+    logger.error('contact: Resend failed', {
+      error: emailResult.status === 'rejected' ? String(emailResult.reason) : 'unknown',
+    })
   }
 
-  // At least one delivery path succeeded — treat as success.
-  // If only email failed: data is in Sanity Studio. If only Sanity failed: owner was notified.
-  return NextResponse.json({ success: true })
+  if (status === 'failed') {
+    return NextResponse.json({ error: contactDeliveryMessage(status) }, { status: 500 })
+  }
+
+  return NextResponse.json({
+    success: true,
+    status,
+    message: contactDeliveryMessage(status),
+  })
 }

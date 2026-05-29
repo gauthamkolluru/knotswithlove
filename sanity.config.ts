@@ -36,6 +36,10 @@ export default defineConfig({
               .schemaType('contact')
               .child(S.documentTypeList('contact').title('Contact')),
             S.listItem()
+              .title('Contact Submissions')
+              .schemaType('contactSubmission')
+              .child(S.documentTypeList('contactSubmission').title('Contact Submissions')),
+            S.listItem()
               .title('Site Settings')
               .schemaType('siteSettings')
               .child(S.documentTypeList('siteSettings').title('Site Settings')),

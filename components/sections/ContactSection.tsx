@@ -1,55 +1,56 @@
 "use client"
 
 import { useState } from 'react'
+import type { Contact } from '@/sanity/lib/types'
 
-interface Channel {
-  _key?: string
-  icon?: string
-  label?: string
-  value?: string
-  href?: string
-}
-
-interface Contact {
-  heading?: string
-  intro?: string
-  channels?: Channel[]
-}
-
-const FALLBACK_CHANNELS: Channel[] = [
-  { _key: '1', icon: 'fas fa-envelope', label: 'email',     value: 'hello@knotswithlove.in',  href: 'mailto:hello@knotswithlove.in' },
-  { _key: '2', icon: 'fab fa-instagram', label: 'instagram', value: '@knotswithlove',          href: '#' },
-  { _key: '3', icon: 'fab fa-whatsapp',  label: 'whatsapp',  value: 'available on request',    href: '#' },
+const FALLBACK_CHANNELS = [
+  { _key: '1', icon: 'fas fa-envelope', label: 'email', value: 'hello@knotswithlove.in', href: 'mailto:hello@knotswithlove.in' },
+  { _key: '2', icon: 'fab fa-instagram', label: 'instagram', value: '@knotswithlove', href: '#' },
+  { _key: '3', icon: 'fab fa-whatsapp', label: 'whatsapp', value: 'available on request', href: '#' },
 ]
 
+type FormStatus = 'idle' | 'sending' | 'sent' | 'partial' | 'error'
+
 export default function ContactSection({ contact }: { contact: Contact | null }) {
-  const heading  = contact?.heading  || 'say hi!'
-  const intro    = contact?.intro    || 'custom order? a question? just want to tell me what you\'re crocheting right now? my inbox is always open 💌'
+  const heading = contact?.heading || 'say hi!'
+  const intro = contact?.intro || 'custom order? a question? just want to tell me what you\'re crocheting right now? my inbox is always open 💌'
   const channels = contact?.channels && contact.channels.length > 0 ? contact.channels : FALLBACK_CHANNELS
 
-  const [form, setForm]     = useState({ name: '', email: '', subject: '', message: '' })
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '', website: '' })
+  const [status, setStatus] = useState<FormStatus>('idle')
+  const [statusMessage, setStatusMessage] = useState('')
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setStatus('sending')
+    setStatusMessage('')
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      if (!res.ok) throw new Error('failed')
-      setStatus('sent')
-      setForm({ name: '', email: '', subject: '', message: '' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setStatus('error')
+        setStatusMessage(typeof data.error === 'string' ? data.error : 'Something went wrong. Please try emailing directly.')
+        return
+      }
+      const message = typeof data.message === 'string' ? data.message : 'Message sent! I\'ll get back to you soon.'
+      setStatus(data.status === 'full' ? 'sent' : 'partial')
+      setStatusMessage(message)
+      setForm({ name: '', email: '', subject: '', message: '', website: '' })
     } catch {
       setStatus('error')
+      setStatusMessage('Something went wrong. Please try emailing directly.')
     }
   }
+
+  const showForm = status === 'idle' || status === 'sending' || status === 'error'
 
   return (
     <section id="contact" className="section">
@@ -80,8 +81,8 @@ export default function ContactSection({ contact }: { contact: Contact | null })
 
           <div>
             <h5 className="contact-group-title">Send a message</h5>
-            {status === 'sent' ? (
-              <p className="form-note">Message sent! I&apos;ll get back to you soon 💌</p>
+            {!showForm ? (
+              <p className="form-note">{statusMessage} 💌</p>
             ) : (
               <form className="contact-form" onSubmit={handleSubmit}>
                 <div className="form-row">
@@ -102,12 +103,16 @@ export default function ContactSection({ contact }: { contact: Contact | null })
                   <label className="form-label">Message</label>
                   <textarea name="message" className="form-control" rows={5} placeholder="Tell me what you have in mind..." value={form.message} onChange={handleChange} required />
                 </div>
+                <div className="form-group" aria-hidden="true" style={{ position: 'absolute', left: '-9999px', height: 0, overflow: 'hidden' }}>
+                  <label htmlFor="website">Website</label>
+                  <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={handleChange} />
+                </div>
                 <button type="submit" className="btn-contact" disabled={status === 'sending'}>
                   <i className="fas fa-paper-plane" />
                   {status === 'sending' ? 'Sending…' : 'Send Message'}
                 </button>
                 {status === 'error' && (
-                  <p className="form-note" style={{ color: 'red' }}>Something went wrong. Please try emailing directly.</p>
+                  <p className="form-note" style={{ color: 'red' }}>{statusMessage}</p>
                 )}
               </form>
             )}
