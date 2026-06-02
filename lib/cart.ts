@@ -5,6 +5,7 @@ export interface CartItem {
   amount: number
   currency: Currency
   qty: number
+  checkoutUrl?: string
 }
 
 const CART_KEY = 'kwl_cart'
@@ -18,7 +19,11 @@ function normalizeCartItem(raw: unknown): CartItem | null {
   const qty = typeof item.qty === 'number' && item.qty > 0 ? Math.floor(item.qty) : 1
 
   if (typeof item.amount === 'number' && Number.isFinite(item.amount) && isCurrency(item.currency)) {
-    return { name: item.name, amount: item.amount, currency: item.currency, qty }
+    const checkoutUrl =
+      typeof item.checkoutUrl === 'string' && item.checkoutUrl.startsWith('https://')
+        ? item.checkoutUrl
+        : undefined
+    return { name: item.name, amount: item.amount, currency: item.currency, qty, checkoutUrl }
   }
 
   if (typeof item.price === 'string') {
@@ -46,13 +51,22 @@ export function saveCart(items: CartItem[]): void {
   window.dispatchEvent(new Event(CART_EVENT))
 }
 
-export function addToCart(name: string, money: Money): void {
+export function addToCart(name: string, money: Money, checkoutUrl?: string): void {
   const items = loadCart()
+  const safeUrl =
+    typeof checkoutUrl === 'string' && checkoutUrl.startsWith('https://') ? checkoutUrl : undefined
   const existing = items.find((item) => item.name === name)
   if (existing) {
     existing.qty += 1
+    if (safeUrl) existing.checkoutUrl = safeUrl
   } else {
-    items.push({ name, amount: money.amount, currency: money.currency, qty: 1 })
+    items.push({
+      name,
+      amount: money.amount,
+      currency: money.currency,
+      qty: 1,
+      checkoutUrl: safeUrl,
+    })
   }
   saveCart(items)
 }

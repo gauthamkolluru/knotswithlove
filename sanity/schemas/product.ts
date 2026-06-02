@@ -18,21 +18,54 @@ export default defineType({
       rows: 3,
     }),
     defineField({
-      name: 'priceAmount',
-      title: 'Price amount',
+      name: 'priceUsdAmount',
+      title: 'Price (USD)',
       type: 'number',
-      description: 'Use decimals for cents/paise (e.g. 12.50). Required for new products.',
+      description: 'US / international price (e.g. 8.00).',
+    }),
+    defineField({
+      name: 'priceInrAmount',
+      title: 'Price (INR)',
+      type: 'number',
+      description: 'India price in rupees (e.g. 499.00).',
+    }),
+    defineField({
+      name: 'checkoutUrlUsd',
+      title: 'Checkout link (USD)',
+      type: 'url',
+      description: 'PayPal or Gumroad link for USD checkout. Leave empty until ready.',
+    }),
+    defineField({
+      name: 'checkoutUrlInr',
+      title: 'Checkout link (INR)',
+      type: 'url',
+      description: 'PayPal or Gumroad link for INR checkout. Leave empty until ready.',
+    }),
+    defineField({
+      name: 'priceAmount',
+      title: 'Price amount (legacy)',
+      type: 'number',
+      description: 'Deprecated — use Price (USD) and Price (INR) instead.',
+      hidden: ({ document }) =>
+        typeof document?.priceUsdAmount === 'number' || typeof document?.priceInrAmount === 'number',
       validation: (Rule) =>
         Rule.custom((amount, context) => {
-          const parent = context.parent as { price?: string }
+          const parent = context.parent as {
+            price?: string
+            priceUsdAmount?: number
+            priceInrAmount?: number
+          }
+          if (typeof parent?.priceUsdAmount === 'number' || typeof parent?.priceInrAmount === 'number') {
+            return true
+          }
           if (typeof amount === 'number' && amount >= 0) return true
           if (parent?.price) return true
-          return 'Enter a price amount'
+          return 'Enter USD and INR prices, or a legacy price amount'
         }),
     }),
     defineField({
       name: 'priceCurrency',
-      title: 'Currency',
+      title: 'Currency (legacy)',
       type: 'string',
       options: {
         list: [
@@ -42,6 +75,8 @@ export default defineType({
         layout: 'radio',
       },
       initialValue: 'USD',
+      hidden: ({ document }) =>
+        typeof document?.priceUsdAmount === 'number' || typeof document?.priceInrAmount === 'number',
     }),
     defineField({
       name: 'price',
@@ -102,14 +137,27 @@ export default defineType({
   preview: {
     select: {
       title: 'name',
+      priceUsdAmount: 'priceUsdAmount',
+      priceInrAmount: 'priceInrAmount',
       priceAmount: 'priceAmount',
       priceCurrency: 'priceCurrency',
       media: 'image',
     },
-    prepare({ title, priceAmount, priceCurrency, media }) {
-      const amount = typeof priceAmount === 'number' ? priceAmount.toFixed(2) : '—'
-      const currency = priceCurrency || 'USD'
-      return { title, subtitle: `${currency} ${amount}`, media }
+    prepare({ title, priceUsdAmount, priceInrAmount, priceAmount, priceCurrency, media }) {
+      const usd =
+        typeof priceUsdAmount === 'number'
+          ? `$${priceUsdAmount.toFixed(2)}`
+          : priceCurrency === 'USD' && typeof priceAmount === 'number'
+            ? `$${priceAmount.toFixed(2)}`
+            : null
+      const inr =
+        typeof priceInrAmount === 'number'
+          ? `₹${priceInrAmount.toFixed(2)}`
+          : priceCurrency === 'INR' && typeof priceAmount === 'number'
+            ? `₹${priceAmount.toFixed(2)}`
+            : null
+      const subtitle = [usd, inr].filter(Boolean).join(' · ') || '—'
+      return { title, subtitle, media }
     },
   },
 })

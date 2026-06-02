@@ -19,6 +19,10 @@ export interface Product {
   _id: string
   name: string
   description?: string
+  priceUsdAmount?: number
+  priceInrAmount?: number
+  checkoutUrlUsd?: string
+  checkoutUrlInr?: string
   priceAmount?: number
   priceCurrency?: Currency
   price?: string

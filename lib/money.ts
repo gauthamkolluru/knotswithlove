@@ -44,18 +44,83 @@ export function parseLegacyPriceString(raw: string): Money | null {
 export interface PriceFields {
   priceAmount?: number
   priceCurrency?: string
+  priceUsdAmount?: number
+  priceInrAmount?: number
   price?: string
 }
 
-export function resolveProductPrice(fields: PriceFields, fallback: Money = { amount: 0, currency: 'USD' }): Money {
-  if (typeof fields.priceAmount === 'number' && Number.isFinite(fields.priceAmount) && isCurrency(fields.priceCurrency)) {
+export interface CheckoutFields {
+  checkoutUrlUsd?: string
+  checkoutUrlInr?: string
+}
+
+export type ProductCommerceFields = PriceFields & CheckoutFields
+
+function finiteAmount(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
+}
+
+export function resolveProductPrice(
+  fields: ProductCommerceFields,
+  activeCurrency: Currency,
+  fallback: Money = { amount: 0, currency: activeCurrency },
+): Money {
+  const dual =
+    activeCurrency === 'USD'
+      ? finiteAmount(fields.priceUsdAmount)
+      : finiteAmount(fields.priceInrAmount)
+  if (dual !== null) {
+    return { amount: dual, currency: activeCurrency }
+  }
+
+  if (
+    typeof fields.priceAmount === 'number' &&
+    Number.isFinite(fields.priceAmount) &&
+    isCurrency(fields.priceCurrency) &&
+    fields.priceCurrency === activeCurrency
+  ) {
     return { amount: fields.priceAmount, currency: fields.priceCurrency }
   }
+
   if (typeof fields.price === 'string') {
     const legacy = parseLegacyPriceString(fields.price)
-    if (legacy) return legacy
+    if (legacy?.currency === activeCurrency) return legacy
   }
+
   return fallback
+}
+
+export function resolveProductPriceOptional(
+  fields: ProductCommerceFields,
+  currency: Currency,
+): Money | null {
+  const dual =
+    currency === 'USD' ? finiteAmount(fields.priceUsdAmount) : finiteAmount(fields.priceInrAmount)
+  if (dual !== null) return { amount: dual, currency }
+
+  if (
+    typeof fields.priceAmount === 'number' &&
+    Number.isFinite(fields.priceAmount) &&
+    isCurrency(fields.priceCurrency) &&
+    fields.priceCurrency === currency
+  ) {
+    return { amount: fields.priceAmount, currency }
+  }
+
+  if (typeof fields.price === 'string') {
+    const legacy = parseLegacyPriceString(fields.price)
+    if (legacy?.currency === currency) return legacy
+  }
+
+  return null
+}
+
+export function resolveCheckoutUrl(fields: CheckoutFields, activeCurrency: Currency): string | null {
+  const raw = activeCurrency === 'USD' ? fields.checkoutUrlUsd : fields.checkoutUrlInr
+  if (typeof raw !== 'string') return null
+  const trimmed = raw.trim()
+  if (!trimmed.startsWith('https://')) return null
+  return trimmed
 }
 
 export function sumMoney(items: Money[]): Money | null {

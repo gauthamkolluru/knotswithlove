@@ -183,6 +183,40 @@ a { color: inherit; }
   vertical-align: middle;
 }
 
+.navbar-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.currency-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(168, 197, 218, 0.6);
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.currency-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--blue-dark);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.currency-toggle-btn.active {
+  background: var(--blue-mid);
+  color: #fff;
+}
+
+.currency-toggle-btn:not(.active):hover {
+  background: rgba(168, 197, 218, 0.25);
+}
+
 /* Mobile hamburger */
 .nav-toggle {
   display: none;
@@ -413,17 +447,56 @@ a { color: inherit; }
 
 .shop-card-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-top: 1rem;
   padding-top: 0.75rem;
   border-top: 1px solid #f1f5f9;
+}
+
+.shop-price-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .shop-price {
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--blue-dark);
+}
+
+.shop-price-alt {
+  font-size: 0.78rem;
+}
+
+.shop-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.btn-shop-buy {
+  background: var(--rose);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: opacity var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  text-decoration: none;
+}
+
+.btn-shop-buy:hover:not(:disabled) { opacity: 0.9; }
+
+.btn-shop-buy:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .btn-shop-add {
@@ -798,6 +871,10 @@ textarea.form-control { resize: vertical; min-height: 120px; }
 .cart-table td:not(:first-child) { text-align: center; }
 .cart-table td:nth-child(3),
 .cart-table td:nth-child(4) { text-align: right; }
+
+.cart-row-muted td {
+  opacity: 0.45;
+}
 
 .cart-table-wrap { overflow-x: auto; }
 

@@ -1,3 +1,4 @@
+import { headers } from 'next/headers'
 import { sanityFetch } from '@/sanity/lib/client'
 import {
   productsQuery,
@@ -7,7 +8,9 @@ import {
   siteSettingsQuery,
 } from '@/sanity/lib/queries'
 import { logger } from '@/lib/logger'
+import StoreProviders from '@/components/StoreProviders'
 import Navbar from '@/components/Navbar'
+import { countryFromRequestHeaders } from '@/lib/geo'
 import Footer from '@/components/Footer'
 import HomeSection from '@/components/sections/HomeSection'
 import ShopSection from '@/components/sections/ShopSection'
@@ -32,6 +35,8 @@ async function fetchSection<T>(label: string, query: string): Promise<T | null> 
 }
 
 export default async function Home() {
+  const geoCountry = countryFromRequestHeaders(await headers())
+
   const [products, inspirationPosts, about, contact, settings] = await Promise.all([
     fetchSection<Product[]>('products', productsQuery),
     fetchSection<InspirationPost[]>('inspiration', inspirationPostsQuery),
@@ -41,7 +46,7 @@ export default async function Home() {
   ])
 
   return (
-    <>
+    <StoreProviders geoCountry={geoCountry}>
       <Navbar brandName={settings?.title} />
       <main>
         <HomeSection settings={settings} />
@@ -52,6 +57,6 @@ export default async function Home() {
         <CartSection />
       </main>
       <Footer brandName={settings?.title} />
-    </>
+    </StoreProviders>
   )
 }

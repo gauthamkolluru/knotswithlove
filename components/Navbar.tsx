@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { CART_EVENT, cartItemCount, loadCart } from '@/lib/cart'
+import CurrencyToggle from '@/components/CurrencyToggle'
 import { DEFAULT_BRAND_NAME } from '@/lib/constants'
 
 const NAV_LINKS = [
@@ -65,13 +66,16 @@ export default function Navbar({ brandName }: { brandName?: string }) {
           {brandName || DEFAULT_BRAND_NAME}
         </a>
 
-        <button
-          className="nav-toggle"
-          aria-label="Toggle menu"
-          onClick={() => setMenuOpen((o) => !o)}
-        >
-          <i className={`fas ${menuOpen ? 'fa-times' : 'fa-bars'}`} />
-        </button>
+        <div className="navbar-tools">
+          <CurrencyToggle />
+          <button
+            className="nav-toggle"
+            aria-label="Toggle menu"
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            <i className={`fas ${menuOpen ? 'fa-times' : 'fa-bars'}`} />
+          </button>
+        </div>
 
         <ul className={`nav-links${menuOpen ? ' open' : ''}`}>
           {NAV_LINKS.map(({ label, href, isCart }) => (

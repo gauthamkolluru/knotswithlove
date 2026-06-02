@@ -24,17 +24,18 @@ Tracked items deferred from the initial engineering pass. Address before product
 
 ## Checkout & payments
 
-**Status:** Stub only (`alert('Checkout coming soon!')` in `CartSection`)
+**Status:** Hybrid v1 — dual USD/INR prices + geo default + currency toggle; **Buy now** / cart open external `checkoutUrlUsd` / `checkoutUrlInr` from Sanity (PayPal/Gumroad). On-site API checkout deferred ~3 months.
 
-**Before launch:**
+**Before on-site checkout:**
 
-- Choose provider (Stripe, Razorpay, etc.) — must support USD and INR
+- PayPal Business (ITIN) and/or Gumroad links per product in Studio
 - Server-side cart validation; never trust client prices
 - Webhook signature verification, idempotency keys, HTTPS-only
 - OWASP top-10 review per `CLAUDE.md` / `agents.md` → invoke `payment-guard` agent
 - Multi-tab cart concurrency (localStorage read-modify-write races)
+- Secure digital delivery after payment
 
-**Files to touch:** new `app/api/checkout/*`, `lib/cart.ts`, `components/sections/CartSection.tsx`
+**Files to touch:** new `app/api/checkout/*`, extend `lib/cart.ts`, `CartSection.tsx`
 
 ---
 

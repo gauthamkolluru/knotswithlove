@@ -3,7 +3,9 @@ import {
   formatMoney,
   lineTotal,
   parseLegacyPriceString,
+  resolveCheckoutUrl,
   resolveProductPrice,
+  resolveProductPriceOptional,
   sumMoney,
 } from '@/lib/money'
 
@@ -32,15 +34,49 @@ describe('parseLegacyPriceString', () => {
 })
 
 describe('resolveProductPrice', () => {
-  it('prefers numeric Sanity fields', () => {
-    expect(resolveProductPrice({ priceAmount: 10.25, priceCurrency: 'USD' })).toEqual({
+  it('prefers dual USD field when active currency is USD', () => {
+    expect(
+      resolveProductPrice({ priceUsdAmount: 8, priceInrAmount: 499, priceAmount: 99, priceCurrency: 'INR' }, 'USD'),
+    ).toEqual({ amount: 8, currency: 'USD' })
+  })
+
+  it('prefers dual INR field when active currency is INR', () => {
+    expect(resolveProductPrice({ priceUsdAmount: 8, priceInrAmount: 499 }, 'INR')).toEqual({
+      amount: 499,
+      currency: 'INR',
+    })
+  })
+
+  it('prefers legacy numeric fields when currency matches', () => {
+    expect(resolveProductPrice({ priceAmount: 10.25, priceCurrency: 'USD' }, 'USD')).toEqual({
       amount: 10.25,
       currency: 'USD',
     })
   })
 
-  it('falls back to legacy price string', () => {
-    expect(resolveProductPrice({ price: '$8.00' })).toEqual({ amount: 8, currency: 'USD' })
+  it('falls back to legacy price string when currency matches', () => {
+    expect(resolveProductPrice({ price: '$8.00' }, 'USD')).toEqual({ amount: 8, currency: 'USD' })
+  })
+})
+
+describe('resolveProductPriceOptional', () => {
+  it('returns null when alternate currency price is missing', () => {
+    expect(resolveProductPriceOptional({ priceUsdAmount: 5 }, 'INR')).toBeNull()
+  })
+})
+
+describe('resolveCheckoutUrl', () => {
+  it('returns https checkout url for active currency', () => {
+    expect(
+      resolveCheckoutUrl(
+        { checkoutUrlUsd: 'https://paypal.me/example', checkoutUrlInr: 'https://gumroad.com/l/x' },
+        'INR',
+      ),
+    ).toBe('https://gumroad.com/l/x')
+  })
+
+  it('rejects non-https urls', () => {
+    expect(resolveCheckoutUrl({ checkoutUrlUsd: 'http://insecure.example' }, 'USD')).toBeNull()
   })
 })
 
