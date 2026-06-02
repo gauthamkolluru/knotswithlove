@@ -103,14 +103,14 @@ export default function CartSection() {
                         <td>{item.qty}</td>
                         <td>{formatMoney(unit)}</td>
                         <td>{formatMoney(total)}</td>
-                        <td>
+                        <td className="cart-cell-remove">
                           <button
                             type="button"
                             className="btn-remove"
                             onClick={() => remove(item.name)}
                             aria-label={`Remove ${item.name}`}
                           >
-                            <i className="fas fa-times" />
+                            <i className="fas fa-trash-can" aria-hidden="true" />
                           </button>
                         </td>
                       </tr>

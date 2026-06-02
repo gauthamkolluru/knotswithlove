@@ -872,6 +872,14 @@ textarea.form-control { resize: vertical; min-height: 120px; }
 .cart-table td:nth-child(3),
 .cart-table td:nth-child(4) { text-align: right; }
 
+.cart-table td.cart-cell-remove {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  text-align: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
 .cart-row-muted td {
   opacity: 0.45;
 }
@@ -928,17 +936,32 @@ textarea.form-control { resize: vertical; min-height: 120px; }
 .btn-checkout:hover { opacity: 0.88; }
 
 .btn-remove {
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  flex-shrink: 0;
+  background: #fff;
   border: 1px solid #fca5a5;
-  color: #ef4444;
-  border-radius: 6px;
-  padding: 0.2rem 0.45rem;
-  font-size: 0.78rem;
+  color: #dc2626;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 
-.btn-remove:hover { background: #fee2e2; }
+.btn-remove i {
+  font-size: 0.95rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.btn-remove:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
 
 /* ─── Footer ───────────────────────────────────────────────────────────────── */
 footer {
