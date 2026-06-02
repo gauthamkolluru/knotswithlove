@@ -89,7 +89,9 @@ export default function CartSection() {
                     <th>Qty</th>
                     <th>Price</th>
                     <th>Total</th>
-                    <th />
+                    <th className="cart-col-remove">
+                      <span className="sr-only">Remove</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -110,7 +112,22 @@ export default function CartSection() {
                             onClick={() => remove(item.name)}
                             aria-label={`Remove ${item.name}`}
                           >
-                            <i className="fas fa-trash-can" aria-hidden="true" />
+                            <svg
+                              className="btn-remove-icon"
+                              viewBox="0 0 24 24"
+                              width="20"
+                              height="20"
+                              aria-hidden="true"
+                              focusable="false"
+                            >
+                              <path
+                                d="M6 6l12 12M18 6L6 18"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                              />
+                            </svg>
                           </button>
                         </td>
                       </tr>
